@@ -1,159 +1,133 @@
-import React, { useContext, useEffect } from 'react';
-import { View, Text, TextInput, Pressable, StyleSheet, TouchableOpacity,Alert } from 'react-native';
+import React,{useState, useEffect, useContext} from 'react';
+import {View,Text, StyleSheet, FlatList, TouchableOpacity, Alert} from 'react-native';
 import { GlobalContext } from '../context';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 import axios from 'axios';
+import io from 'socket.io-client';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+let socket;
 
 export default function HomeScreen({navigation}) {
-  const { showLoginView, setShowLoginView, username, setUsername } = useContext(GlobalContext);
+  const {user, setUser, newSocket, setNewSocket} = useContext(GlobalContext);
+  const [chatUsers, setChatUsers] = useState([]);
+  const [notifications, setNotifications] = useState([]);
   useEffect(() => {
-    const initialize = async () =>{
-     const token = await AsyncStorage.getItem("token");
-     const res = await axios.get("http:192.168.36.75:5000/fetch",{
-      headers:{
-        'Authorization': `Bearer${token}`
+    const initialize = async () => {
+      const token = await AsyncStorage.getItem('token');
+      try {
+        const res = await axios.get("http://192.168.120.75:5000/fetch", {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.data.status === 'verified') {
+          console.log(res.data.chatUsers);
+          console.log(res.data.chatUsers.messages)
+          setUser(res.data.user);
+          console.log(res.data.user.profilePicture);
+          const filteredUsers = res.data.chatUsers.map(item => {
+            const chatPartner = item.Person1._id === res.data.user._id ? item.Person2 : item.Person1;
+            const lastMessage = item.messages?.[item.messages.length - 1] || null;
+            return {
+              ...chatPartner,
+              lastMessage,
+            };
+          });
+          
+
+          setChatUsers(filteredUsers);
+
+          if (!socket) {
+            socket = io('http://192.168.120.75:5000');
+            setNewSocket(socket);
+            socket.emit('register', res.data.user._id); 
+            console.log(`Socket registered for user: ${res.data.user._id}`);
+
+            socket.on('receiveNotification', ({notification}) => {
+              console.log("New Notification:", notification.type);
+              setNotifications((prev) => [...prev, notification]);
+            });
+          }
+        }
+      } catch (e) {
+        console.error('Error during initialization:', e);
       }
-     });
-     
-    }
+    };
+
     initialize();
-  },[])
-  const handleLogin = async () => {
-    try {
-      const res = await axios.post("http:192.168.36.75:5000/Login", {
-        username,
-      });
-  
-      if (res.data.status === "Authentication Succesfull") {
-        await AsyncStorage.setItem("token",res.data.token);
-        navigation.navigate('Chat');
-      } else {
-        Alert.alert("Error", "User not found");
+
+    return () => {
+      if (socket) {
+        socket.disconnect(); 
+        socket = null;
       }
-    } catch (error) {
-      console.error("Error during login:", error);
-      Alert.alert("Error", "Something went wrong. Please try again.");
-    }
-  };
-  const handleSignin = async () => {
+    };
+  }, []);
+
+  const redirect = async (receiverId) => {
     try{
-      const res = await axios.post("http:192.168.36.75:5000/Signin",{
-        username
+      const res = await axios.post("http://192.168.120.75:5000/checkStatus",{
+        senderId: user._id,
+        receiverId: receiverId
       });
-      if(res.data.status === "User Already Exists")
-        Alert.alert("User Already Exists");
+      if(res.data.status==="Request is accepted")
+        navigation.navigate('ChatScreen',{
+      receiverId,
+      senderId: user._id
+        });
       else
-        Alert.alert("User Created, login to continue...");
+      Alert.alert("Error","Something went wrong");
     }
     catch(e){
-      res.status(500).json({error:"Inter Server error"});
+      console.log("Error:",e);
     }
   }
+
   return (
-    <View>
-      {showLoginView ? (
-        <View style={styles.authenticate}>
-          <Text style={styles.name}>Enter Your Username</Text>
-          <TextInput
-          style={styles.authenticateName}
-            placeholder="Enter your Username"
-            value={username}
-            onChangeText={(text) => setUsername(text)}
-          />
-          <View style={styles.Buttons}>
-            <Pressable style={styles.buttonContainer} onPress={() => {
-              console.log('Register pressed')
-              handleSignin()
-            }
-            }>
-              <Text style={styles.buttonText1}>Register</Text>
-            </Pressable>
-            <Pressable style={styles.buttonContainer} onPress={() => 
-              {
-                handleLogin()
-                }
-                }>
-              <Text style={styles.buttonText1}>Login</Text>
-            </Pressable>
-          </View>
+    <View style={{flex: 1, backgroundColor:'lightgrey'}}>
+      <View style={styles.head}>
+        <Text style={styles.headText}>MessToC</Text>
+        <AntDesign name={'notification'} size={25} color={'white'} style={{alignSelf:'flex-end',top:18,right:15}} onPress={() => navigation.navigate('Notification',{
+                  notifications
+                })}/>
+      </View>
+      <FlatList
+      data={chatUsers}
+      keyExtractor={(item) => item._id.toString()}
+      renderItem={({item}) => (
+        <TouchableOpacity style={styles.userRecords} onPress={() => redirect(item._id)}>
+          <View style={{flexDirection:'row'}}>
+        <Text style={{color:'black', fontSize:17, fontWeight:'bold'}}>{item.username}</Text>
+        <Text style={{color:'black',alignSelf:'flex-end', left:190}}>{item.lastMessage?.timestamp || ''}</Text>
         </View>
-      ) : (
-        <View style={styles.ContentInfo}>
-          <Text style={styles.title}>Connect, Grow, Inspire</Text>
-          <Text style={styles.subtitle}>Chat with your close ones around the world</Text>
-          <TouchableOpacity onPress={() => setShowLoginView(true)} style={styles.button}>
-            <View>
-              <Text style={styles.buttonText}>Get Started</Text>
-            </View>
-          </TouchableOpacity>
-        </View>
+        <Text style={{color:'black'}}>{item.lastMessage?.content}</Text>
+        </TouchableOpacity>
       )}
+      />
     </View>
-  );
+  )
 }
 
 const styles = StyleSheet.create({
-  ContentInfo: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#f8f9fa',
-    height: '100%',
+  userRecords:{
+   top:20,
+   width:'95%',
+   height:80,
+   marginTop:5,
+   marginLeft:10,
+   backgroundColor:'white',
+   borderRadius:5,
+   paddingVertical:20,
+   paddingHorizontal:10
   },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    textAlign: 'center',
+  headText:{
+    fontSize:25,
+    fontWeight:'condensed',
+    color:'white',
+    top:45,
+    left:35
   },
-  subtitle: {
-    fontSize: 16,
-    color: '#6c757d',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  button: {
-    backgroundColor: '#007bff',
-    padding: 15,
-    borderRadius: 5,
-    alignItems: 'center',
-    width: '80%',
-  },
-  buttonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  authenticate: {
-    marginTop:'20%',
-    marginLeft:'15%',
-    width:'65%'
-  },
-  name:{
-    fontSize:20,
-    fontWeight:'bold',
-    paddingBottom:25
-  },
-  authenticateName:{
-    fontSize:15,
-    borderColor:'black',
-    borderWidth:1,
-    borderRadius:20,
-  },
-  buttonContainer:{
-    backgroundColor: '#007bff',
-    padding: 10,
-    borderRadius: 5,
-    alignItems: 'center',
-    width: '50%',
-    marginRight: 10
-  },
-  buttonText1:{
-    fontSize:14,
-    color:'white'
-  },
-  Buttons:{
-    marginTop:10,
-    flexDirection:'row'
+  head:{
+    height:100,
+    width:'100%',
+    backgroundColor:'rgba(0,0,256,0.5)'
   }
-});
+})

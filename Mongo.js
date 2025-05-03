@@ -1,19 +1,29 @@
-const mongoose = require('mongoose');
+const mongoose = require('mongoose')
+const connectDB = require('./connection');
 
-mongoose.connect('mongodb://localhost:27017/ChatApp')
-.then(() => {
-    console.log("MongoDB connected")
-})
-.catch(() => {
-    console.log("Connection Failed")
-})
+
 
 const UserAuthenticate = new mongoose.Schema({
-    username:{
+    profilePicture:
+    {
         type:String,
-        require:true
+        required: false
+    },
+
+    username:
+    {
+        type:String,
+        required:true
+    },
+    about:{
+        type: String,
+        required: false
+    },
+    number:{
+        type:String,
+        required: false
     }
 })
 
-const User = new mongoose.model('collection1', UserAuthenticate)
+const User = new mongoose.model('collection2', UserAuthenticate)
 module.exports = User;
