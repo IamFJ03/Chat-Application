@@ -1,13 +1,15 @@
 import React,{useState, useEffect, useContext} from 'react';
-import {View,Text, StyleSheet, FlatList, TouchableOpacity, Alert} from 'react-native';
+import {View,Text, StyleSheet, FlatList, TouchableOpacity, Alert, Image} from 'react-native';
 import { GlobalContext } from '../context';
 import AntDesign from 'react-native-vector-icons/AntDesign';
+import UserProfile from '../assets/UserProfile.png';
 import axios from 'axios';
 import io from 'socket.io-client';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 let socket;
 
 export default function HomeScreen({navigation}) {
+  const [image, setImage] = useState(UserProfile)
   const {user, setUser, newSocket, setNewSocket} = useContext(GlobalContext);
   const [chatUsers, setChatUsers] = useState([]);
   const [notifications, setNotifications] = useState([]);
@@ -19,8 +21,8 @@ export default function HomeScreen({navigation}) {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         if (res.data.status === 'verified') {
-          console.log(res.data.chatUsers);
-          console.log(res.data.chatUsers.messages)
+          console.log("yo yo",res.data.chatUsers);
+          console.log("Dhappa",res.data.chatUsers.profilePicture);
           setUser(res.data.user);
           console.log(res.data.user.profilePicture);
           const filteredUsers = res.data.chatUsers.map(item => {
@@ -95,10 +97,15 @@ export default function HomeScreen({navigation}) {
       renderItem={({item}) => (
         <TouchableOpacity style={styles.userRecords} onPress={() => redirect(item._id)}>
           <View style={{flexDirection:'row'}}>
+        <Image source = {item?.profilePicture ? 
+        {uri:`http://192.168.120.75:5000/${item.profilePicture}`}
+      :
+      image
+      }  style={{top:-5, height:35, width:35, borderRadius:20, marginRight: 10}}/>
         <Text style={{color:'black', fontSize:17, fontWeight:'bold'}}>{item.username}</Text>
-        <Text style={{color:'black',alignSelf:'flex-end', left:190}}>{item.lastMessage?.timestamp || ''}</Text>
+        <Text style={{color:'black',alignSelf:'flex-end', left:135}}>{item.lastMessage?.timestamp || ''}</Text>
         </View>
-        <Text style={{color:'black'}}>{item.lastMessage?.content}</Text>
+        <Text style={{color:'black', top:-5}}>{item.lastMessage?.content}</Text>
         </TouchableOpacity>
       )}
       />

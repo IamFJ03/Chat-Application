@@ -99,8 +99,9 @@ app.get('/fetch',Authentication, async (req,res)=>{
             {Person2: username._id}
         ]
     })
-    .populate('Person1','username')
-    .populate('Person2','username')
+    .populate('Person1', 'username profilePicture')
+    .populate('Person2', 'username profilePicture')
+
     if(find){
         console.log(find);
     res.json({status:"verified",user:username, chatUsers: find});

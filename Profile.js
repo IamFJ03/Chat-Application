@@ -27,26 +27,27 @@ export default function Profile() {
       }
   }
   initialize();
-  const fetchUserDetails = async () => {
-      const token = await AsyncStorage.getItem('token');
-      try{
-          const res = await axios.get("http://192.168.120.75:5000/fetch-User",{
-            headers:{
-              'Authorization':`Bearer ${token}`
-            }
-          });
-          if(res.data.status==="User Found"){
-            console.log(res.data.data);
-            setUserData(res.data.data);
-             }
-      }
-      catch(e){
-        console.log("Error",e);
-      }
-  }
+  
   fetchUserDetails();
   },[]);
 
+  const fetchUserDetails = async () => {
+    const token = await AsyncStorage.getItem('token');
+    try{
+        const res = await axios.get("http://192.168.120.75:5000/fetch-User",{
+          headers:{
+            'Authorization':`Bearer ${token}`
+          }
+        });
+        if(res.data.status==="User Found"){
+          console.log(res.data.data);
+          setUserData(res.data.data);
+           }
+    }
+    catch(e){
+      console.log("Error",e);
+    }
+}
   const pickImage = async() => {
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ["images"],
@@ -60,6 +61,7 @@ export default function Profile() {
       setImage(result.assets[0].uri);
       setModalOpen(false);
       upload(selectedURI);
+      
     }
     else
         console.log("No Image is Selected");
@@ -74,6 +76,7 @@ export default function Profile() {
     if(!result.canceled && result.assets?.length>0){
       const selectedURI = result.assets[0].uri;
       setImage(result.assets[0].uri);
+      
       setModalOpen(false);
       upload(selectedURI);
     }
@@ -96,8 +99,10 @@ export default function Profile() {
           'Content-Type': 'multipart/form-data',
         },
       })
-      if(res.data.status=="Profile Picture Updated")
+      if(res.data.status=="Profile Picture Updated"){
         console.log("Cool it is uploaded check db", res.data.upload);
+        fetchUserDetails();
+      }
        }
     catch(e){
       console.log("Error",e);
@@ -119,6 +124,7 @@ export default function Profile() {
       });
       if(res.data.status==="Congo it's done"){
         console.log("New Data:",res.data.newData);
+        fetchUserDetails();
       }
     }
     catch(e){
@@ -146,17 +152,16 @@ export default function Profile() {
           setSecondModal(true)
         }}><Text style={{color:'grey',left:100, fontSize:20}}>Edit Info</Text></TouchableOpacity>
       </View>
-      <View style={{marginTop:50, marginLeft:20}}>
-        <View style={{marginBottom:30, flexDirection:'row'}}>
+      <View style={{flexDirection:'row',marginTop:40, marginLeft:20}}>
+        <View style={{width:110}}>
         <Text style={styles.headLine}>Username:</Text>
-        <Text style={{fontSize:17,left:130}}>{userData? userData.username : 'Loading'}</Text>
-        </View>
-        <View style={{marginBottom:30, flexDirection:'row'}}>
-        <Text style={styles.headLine}>Email:</Text>
-        <Text style={{fontSize:17,left:130}}></Text>
-        </View>
-        <View style={{marginBottom:30, flexDirection:'row'}}>
         <Text style={styles.headLine}>About:</Text>
+        <Text style={styles.headLine}>Phone Number:</Text>
+        </View>
+        <View style={{left:-30, width:150}}>
+        <Text style={styles.userdata}>{userData? userData.username : 'Loading'}</Text>
+        <Text style={styles.userdata}>{userData? userData.about : 'Loading'}</Text>
+        <Text style={styles.userdata}>{userData? userData.number : 'Loading'}</Text>
         </View>
       </View>
       </View>
@@ -242,9 +247,15 @@ const styles = StyleSheet.create({
   },
 
   headLine:{
-    fontSize:17
+    fontWeight: 'bold',
+    fontSize:17,
+    marginBottom:20,
   },
-
+  userdata:{
+    fontSize:17,
+    left:100,
+    marginBottom:20
+  },
   modalContainer:{
        top:565,
        height: 200, 
