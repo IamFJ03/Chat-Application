@@ -180,7 +180,7 @@ io.on('connection',(socket) => {
         
         const found = await User.findOne({_id: receiverId});
         if(found){
-            socket.emit('getReceiverName',found.username);
+            socket.emit('getReceiverName',{username: found.username, profilePicture: found.profilePicture});
         }
         else
         console.log("error");

@@ -1,21 +1,26 @@
 import React,{useContext, useEffect, useState} from 'react'
-import {View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList} from 'react-native';
+import {View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Image} from 'react-native';
 import {GlobalContext} from '../context';
 import Message from './Messages';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import UserProfile from '../assets/UserProfile.png';
 import axios from 'axios';
 
 export default function ChatScreen({route}) {
   const {newSocket, setNewSocket, user} = useContext(GlobalContext);
   const {receiverId,senderId} = route.params;
   const [username, setUsername] = useState("");
+  const [dP, setDP] = useState("");
   const [mesg, setMesg] = useState("");
   const [allMessages, setAllMessages] = useState([]);
 
   useEffect(() => {
    newSocket.emit('findReceiver',{receiverId});
    
-   const handleReceiverName = (username) =>{
-    setUsername(username)
+   const handleReceiverName = (item) =>{
+    setUsername(item.username);
+    console.log("Profile Picture:",item.profilePicture);
+    setDP(item.profilePicture);
    }
    newSocket.on('getReceiverName',handleReceiverName);
 
@@ -78,6 +83,17 @@ export default function ChatScreen({route}) {
   return (
     <View style={styles.container}>
       <View style={styles.head}>
+      
+        
+        {dP ?
+        (
+        <Image source={dP ? { uri: `http://192.168.120.75:5000/${dP}` } : UserProfile} style={styles.dp} />
+        )
+      :
+      (
+        <Ionicons name='person' color={'white'} size={35} style={styles.userProfile}/>
+      )
+      }
         <Text style={styles.headText}>{username}</Text>
       </View>
       <View style={{flex:1}}>
@@ -109,8 +125,24 @@ export default function ChatScreen({route}) {
 }
 
 const styles = StyleSheet.create({
-  
-  
+  userProfile:{
+    top:35,
+    left:20,
+    height: 50,
+    width: 50,
+    borderRadius:20,
+    paddingVertical:5,
+    paddingHorizontal:5,
+    borderWidth: 1,
+    borderColor:'white'
+  },
+  dp:{
+    top:35,
+    left:20,
+    height: 50,
+    width: 50,
+    borderRadius:20
+  },
   textContainer: {
     bottom:0,
     flexDirection: 'row',
@@ -126,11 +158,13 @@ const styles = StyleSheet.create({
   },
   head: {
     height: 100,
+    flexDirection:'row',
     backgroundColor: 'rgba(0,0,256,0.5)'
   },
   headText: {
     color:'white',
     top: 45,
+    left:30,
     fontSize: 20,
     fontWeight: 'bold',
     justifyContent: 'center',

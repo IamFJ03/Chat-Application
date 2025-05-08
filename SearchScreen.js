@@ -140,11 +140,11 @@ export default function SearchScreen({navigation}) {
       >
         <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.5)' }}>
           <View style={styles.modalContainer}>
-            <Text style={{ textAlign: 'center', fontSize: 17, fontWeight: 'bold', borderBottomWidth: 2 }}>
+            <Text style={{ textAlign: 'center',marginBottom: 10, fontSize: 18, fontWeight: 'bold', borderBottomWidth: 2 }}>
               Access Permission
             </Text>
-            <Text style={{ top: 10, left: 5, fontSize: 14 }}>Permission required to chat with the User!!</Text>
-            <View style={{ flexDirection: 'row', top: 15 }}>
+            <Text style={{ width:'85%', top: 10, left: 15, fontSize: 16 }}>Permission required to chat with the User!!</Text>
+            <View style={{ flexDirection: 'row', top: 25, left: 10 }}>
               <TouchableOpacity
                 style={styles.button}
                 onPress={() => {
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
     marginRight: 10,
     paddingVertical: 10,
     paddingHorizontal: 15,
-    backgroundColor: '#007bff'
+    backgroundColor: 'rgba(0,0,256,0.5)'
   },
   buttonText: {
     color: 'white'
@@ -181,8 +181,8 @@ const styles = StyleSheet.create({
   modalContainer: {
     top: 200,
     left: 50,
-    height: 200,
-    width: 250,
+    height: 240,
+    width: 280,
     paddingTop: 20,
     padding: 10,
     borderRadius: 10,
